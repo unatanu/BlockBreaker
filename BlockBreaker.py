@@ -50,9 +50,7 @@ info_y = blank  # 情報ボックスの左上y座標
 RADIUS = 10             # 半径
 x0 = game_screen_W/2    # 初期x座標
 y0 = game_screen_H*2/3  # 初期y座標
-Ball_Speed = 1.0        # 移動速度
-Ball_num = 2            # ボールの個数
-Ball_delay = 1.0    # ボールが複数個でゲームを開始したとき、動き始めのタイミングをずらす時間
+Ball_delay = 1.0        # ボールが複数個でゲームを開始したとき、動き始めのタイミングをずらす時間
 Ball_score = 100        # ボールが最後まで残ったときのボーナス得点
 
 
@@ -76,10 +74,6 @@ COLOR_SET_2 = ["darkorange","deepskyblue","lime","yellow"]
 COLOR_SET_3 = ["blueviolet","dodgerblue","gold","orange"]
 COLOR_SET_4 = ["limegreen","magenta","slateblue","cyan"]
 COLORS = random.choice([COLOR_SET_1, COLOR_SET_2, COLOR_SET_3, COLOR_SET_4])  # カラーセットの中からランダムに一つのセットを選ぶ
-
-
-# fps = 120
-# clock = pygame.time.Clock()
 
 
 
@@ -193,7 +187,7 @@ class Bar:
 
 # ボール
 class Ball:
-    def __init__(self, screen, x, y):
+    def __init__(self, screen, x, y, Ball_Speed):
         # 関数内の変数と外部の変数の紐づけ
         self.screen = screen
         self.x = x
@@ -220,7 +214,7 @@ class Ball:
         pygame.draw.circle(screen, "black", (self.x, self.y), self.r, width=1)
 
     # ボールの衝突判定
-    def check_collision(self):
+    def check_collision(self, BAR_x, Ball_Speed):
 
         # ボールが画面の側面に当たったとき
         if self.x - self.r <= game_x + line_width or self.x + self.r >= game_x + game_screen_W - line_width:
@@ -316,7 +310,7 @@ class Message:
 
 
     # タイトル画面の選択肢部分に表示する文字
-    def select(self):
+    def select(self, select_num):
         pygame.draw.rect(screen,"white",(0, game_y + game_screen_H // 2 + 40, screen_Width, game_screen_H // 2))  # 選択肢部分のみ白く塗りつぶし
         for i in range(len(self.words)):
             if i == select_num:  # 選ばれている選択肢の文字を大きくする
@@ -330,7 +324,7 @@ class Message:
 
 
     # タイトル画面のオプションを開いたときに表示する文字
-    def option(self, Ball_num, Ball_Speed):
+    def option(self, select_num, Ball_num, Ball_Speed):
         pygame.draw.rect(screen,"white",(0, game_y + game_screen_H // 2 + 40, screen_Width, game_screen_H // 2))
         self.options = ["", "NUM BALL", "BALL SPEED", "TITLE"]
         for i in range(len(self.options)):
@@ -375,7 +369,7 @@ class Message:
 
 
     # ゲームオーバーになったときの文字
-    def gameover(self):
+    def gameover(self, SCORE):
         transparent_surface = pygame.Surface((300, 100), pygame.SRCALPHA)  # メッセージボックス（幅、高さ）
         transparent_surface.fill((255, 50, 50, 200))  # メッセージボックスの色と透明度
 
@@ -396,7 +390,7 @@ class Message:
 
 
     # クリアしたときの文字
-    def clear(self):
+    def clear(self, SCORE):
         self.text_clear = self.font_message.render("CLEAR!", True, "black")
         self.text_score = self.font_message.render(f"SCORE: {SCORE}", True, "black")
         self.text_back = self.font_common.render("ENTER: BACK TO TITLE", True, "black")
@@ -413,531 +407,264 @@ class Message:
 
 
 
-
-class Block
-# フラグの初期設定
-running = True          # プログラムを進行させるかを示す
-game_started = False    # ゲームが開始されたかどうかを示す
-is_gameover = False     # ゲームオーバーになったかを示す
-is_clear = False        # クリアしたかを示す
-is_title = True         # タイトル画面かを示す
-
-select_num = 0  # 何番目の選択肢を選んでいるか
-option_window = 0  # 何番目の選択肢階層にいるか
-message = Message()
-
-
-while running:
-
-    # ゲームが開始されていない場合
-    while not game_started:
-
-        # メッセージの表示
-        if not is_gameover and not is_clear:  # タイトル画面
-            screen.fill("white")
-            message.title()
-        else:
-            if is_gameover and not is_clear:  # ゲームオーバーしたとき
-                message.gameover()
-            else:  # クリアしたとき
-                message.clear()
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == K_ESCAPE:  # escキーでゲームを終了
-                        pygame.quit()
-                        sys.exit()
-
-                    if event.key == K_RETURN:  # enterが押されたとき
-                        screen.fill("white")
-                        message.title()
-                        sound.decide()
-                        is_title = True
-                        select_num = 0
-
-                    elif event.key == K_SPACE:
-                        sound.decide()
-                        game_started = True
-
-        pygame.display.update()
-
-        # ------------------------------------------------------------------------------------------------------------------
-        # タイトル画面での処理
-        while is_title:
-            # ゲーム開始の処理
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == K_ESCAPE:  # escキーでゲームを終了
-                        pygame.quit()
-                        sys.exit()
-
-                    # タイトル画面でオプションを選んでいるとき
-                    if option_window == 0:
-                        # 矢印キーの上下が押されたとき、対応する選択肢の文字を大きくする
-                        if event.key == K_DOWN:
-                            select_num += 1
-                            sound.select()
-                        elif event.key == K_UP:
-                            select_num -= 1
-                            sound.select()
-                        select_num = select_num % len(message.words)  # 値が大きすぎたりマイナスになるのを回避
-                        message.select()
-                        pygame.display.update()
-
-                        # 選択肢が選ばれたとき
-                        if event.key == K_RETURN:  # enterが押されたとき
-                            if message.words[select_num] == "OPTION":
-                                select_num = 0
-                                option_window = 1
-                                sound.decide()
-                                message.option(Ball_num, Ball_Speed)
-                                pygame.display.update()
-                            elif message.words[select_num] == "QUIT":
-                                sound.decide()
-                                pygame.quit()
-                                sys.exit()
-                    
-                    # オプションの中身を表示している場合
-                    if option_window == 1:
-                        # 矢印キーを押したとき、対応する文字を大きくするための変数管理
-                        if event.key == K_DOWN:
-                            select_num += 1
-                            sound.select()
-                        elif event.key == K_UP:
-                            select_num -= 1
-                            sound.select()
-                        select_num = select_num % len(message.options) 
-
-                        # 該当するオプションの数値を増減させる
-                        if event.key == K_RIGHT:
-                            if message.options[select_num] == "NUM BALL":
-                                Ball_num += 1
-                                sound.select()
-                            elif message.options[select_num] == "BALL SPEED":
-                                Ball_Speed += .1
-                                sound.select()
-                        elif event.key == K_LEFT:
-                            if message.options[select_num] == "NUM BALL":
-                                Ball_num -= 1
-                                sound.select()
-                            elif message.options[select_num] == "BALL SPEED":
-                                Ball_Speed -= .1
-                                sound.select()
-                        Ball_num = Ball_num % 11  # 0~10の範囲内のみ
-                        Ball_Speed = Ball_Speed % 5.1  # 0.0~5.0の範囲内のみ
-                        Ball_Speed = round(Ball_Speed, 2)  # 少数第2位を四捨五入
-
-                        message.option(Ball_num, Ball_Speed)
-                        pygame.display.update()
-
-                        # 選択肢が選ばれたとき
-                        if event.key == K_RETURN:  # enterが押されたとき
-                            if message.options[select_num] == "TITLE":
-                                select_num = 0
-                                option_window = 0
-                                sound.decide()
-                                message.select()
-                                pygame.display.update()
-
-                    # スペースキーが押されたらゲームを開始する
-                    if event.key == pygame.K_SPACE:
-                        sound.decide()
-                        game_started = True
-                        is_title = False
-
-
-    # ゲームが開始されている場合
-    set_up = False
+def BlockBreaker(running=True):
+    game_started = False
     is_gameover = False
     is_clear = False
-    while game_started:
+    is_title = True
 
-        # ------------------------------------------------------------------------------------------------------------------
-        # ゲーム開始時の初回設定
-        if not set_up:
-            screen.fill("white")
-            # ゲーム画面、インフォメーション画面の作成
-            pygame.draw.rect(screen, "black", Rect(game_x, game_y, game_screen_W, game_screen_H),4)
-            pygame.draw.rect(screen, "black", Rect(info_x, info_y, info_screen_W, info_screen_H), line_width)
+    select_num = 0      # 何番目の選択肢を選んでいるか
+    option_window = 0   # 何番目の選択肢階層にいるか
+    SCORE = 0
+    Ball_num = 2
+    Ball_Speed = 1.0
+    message = Message()
 
-            # 各ブロック、各ボールの生成
-            blocks = [Block(screen, ix*Block_Width + game_x + line_width, iy*Block_Height + game_y, random.choice(COLORS)) for ix in range(game_screen_W//Block_Width) for iy in range(Block_pos_lim//Block_Height)]
-            balls = [Ball(screen,x0,y0) for i in range(Ball_num)]
-            # バーの位置の初期化
-            BAR_x = game_screen_W/2  # バーの中心x座標
-            bar = Bar(screen, BAR_x)
-            move_left = False
-            move_right = False
-            val_decoded = 0
+    while running:
 
-            SCORE = 0  # スコア
-            message.info(SCORE, 0)  # スコアの表示
-            pre_time = time.time()  # 現在の時刻を取得
-            limit_num = 0  # 開始直後に動けるボールの数（下の方で増える処理がある）
+        # ゲームが開始されていない場合
+        while not game_started:
 
-            set_up = True  # 準備完了
+            # メッセージの表示
+            if not is_gameover and not is_clear:  # タイトル画面
+                screen.fill("white")
+                message.title()
+            else:
+                if is_gameover and not is_clear:  # ゲームオーバーしたとき
+                    message.gameover(SCORE)
+                else:  # クリアしたとき
+                    message.clear(SCORE)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
+
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == K_ESCAPE:  # escキーでゲームを終了
+                            pygame.quit()
+                            sys.exit()
+
+                        if event.key == K_RETURN:  # enterが押されたとき
+                            screen.fill("white")
+                            message.title()
+                            sound.decide()
+                            is_title = True
+                            select_num = 0
+
+                        elif event.key == K_SPACE:
+                            sound.decide()
+                            game_started = True
+
             pygame.display.update()
-            pygame.time.delay(500)
 
-        
+            # ------------------------------------------------------------------------------------------------------------------
+            # タイトル画面での処理
+            while is_title:
+                # ゲーム開始の処理
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        pygame.quit()
+                        sys.exit()
 
-        # メインループ
-        if not is_gameover or not is_clear:
-            # clock.tick(fps)
-            # ------------------------------------------------------ bar ------------------------------------------------------------
-            if control_name[control_mode] == "Key":
-                move_right, move_left, BAR_x, pre_x = bar.input_key(move_right, move_left, BAR_x)
-            elif control_name[control_mode] == "Resist":
-                pre_x = BAR_x  # 動かす前のバーのx座標を保存
-                data = ser.readline().decode().strip()  # データを文字列として受信し、空白文字を除去する
-                try:
-                    value = int(data)
-                    BAR_x = game_x + Bar_Width/2 + (game_screen_W - line_width - Bar_Width) * round((Resist_MAX - value) / (Resist_MAX - Resist_MIN), 2)
-                    message.info(SCORE, val_decoded)
-                except ValueError:
-                    continue
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == K_ESCAPE:  # escキーでゲームを終了
+                            pygame.quit()
+                            sys.exit()
 
-            bar.move(pre_x, BAR_x)
+                        # タイトル画面でオプションを選んでいるとき
+                        if option_window == 0:
+                            # 矢印キーの上下が押されたとき、対応する選択肢の文字を大きくする
+                            if event.key == K_DOWN:
+                                select_num += 1
+                                sound.select()
+                            elif event.key == K_UP:
+                                select_num -= 1
+                                sound.select()
+                            select_num = select_num % len(message.words)  # 値が大きすぎたりマイナスになるのを回避
+                            message.select(select_num)
+                            pygame.display.update()
 
-            # ------------------------------------------------------ ball ------------------------------------------------------------
-            for index, ball in enumerate(balls):  # 動かすボールとそのインデックスを取得
-                ball.move()
-                ball.check_collision()
-                # ブロックとの接触判定
-                for block in blocks:
-                    if block.check_collision_x(ball.x, ball.y):
-                        blocks.remove(block)
-                        sound.breaks()
-                        SCORE += 10
+                            # 選択肢が選ばれたとき
+                            if event.key == K_RETURN:  # enterが押されたとき
+                                if message.words[select_num] == "OPTION":
+                                    select_num = 0
+                                    option_window = 1
+                                    sound.decide()
+                                    message.option(select_num, Ball_num, Ball_Speed)
+                                    pygame.display.update()
+                                elif message.words[select_num] == "QUIT":
+                                    sound.decide()
+                                    pygame.quit()
+                                    sys.exit()
+                        
+                        # オプションの中身を表示している場合
+                        if option_window == 1:
+                            # 矢印キーを押したとき、対応する文字を大きくするための変数管理
+                            if event.key == K_DOWN:
+                                select_num += 1
+                                sound.select()
+                            elif event.key == K_UP:
+                                select_num -= 1
+                                sound.select()
+                            select_num = select_num % len(message.options) 
+
+                            # 該当するオプションの数値を増減させる
+                            if event.key == K_RIGHT:
+                                if message.options[select_num] == "NUM BALL":
+                                    Ball_num += 1
+                                    sound.select()
+                                elif message.options[select_num] == "BALL SPEED":
+                                    Ball_Speed += .1
+                                    sound.select()
+                            elif event.key == K_LEFT:
+                                if message.options[select_num] == "NUM BALL":
+                                    Ball_num -= 1
+                                    sound.select()
+                                elif message.options[select_num] == "BALL SPEED":
+                                    Ball_Speed -= .1
+                                    sound.select()
+                            Ball_num = Ball_num % 11  # 0~10の範囲内のみ
+                            Ball_Speed = Ball_Speed % 5.1  # 0.0~5.0の範囲内のみ
+                            Ball_Speed = round(Ball_Speed, 2)  # 少数第2位を四捨五入
+
+                            message.option(select_num, Ball_num, Ball_Speed)
+                            pygame.display.update()
+
+                            # 選択肢が選ばれたとき
+                            if event.key == K_RETURN:  # enterが押されたとき
+                                if message.options[select_num] == "TITLE":
+                                    select_num = 0
+                                    option_window = 0
+                                    sound.decide()
+                                    message.select(select_num)
+                                    pygame.display.update()
+
+                        # スペースキーが押されたらゲームを開始する
+                        if event.key == pygame.K_SPACE:
+                            sound.decide()
+                            game_started = True
+                            is_title = False
+
+
+        # ゲームが開始されている場合
+        set_up = False
+        is_gameover = False
+        is_clear = False
+        while game_started:
+
+            # ------------------------------------------------------------------------------------------------------------------
+            # ゲーム開始時の初回設定
+            if not set_up:
+                screen.fill("white")
+                # ゲーム画面、インフォメーション画面の作成
+                pygame.draw.rect(screen, "black", Rect(game_x, game_y, game_screen_W, game_screen_H),4)
+                pygame.draw.rect(screen, "black", Rect(info_x, info_y, info_screen_W, info_screen_H), line_width)
+
+                # 各ブロック、各ボールの生成
+                blocks = [Block(screen, ix*Block_Width + game_x + line_width, iy*Block_Height + game_y, random.choice(COLORS)) for ix in range(game_screen_W//Block_Width) for iy in range(Block_pos_lim//Block_Height)]
+                balls = [Ball(screen,x0,y0, Ball_Speed) for i in range(Ball_num)]
+                # バーの位置の初期化
+                BAR_x = game_screen_W/2  # バーの中心x座標
+                bar = Bar(screen, BAR_x)
+                move_left = False
+                move_right = False
+                val_decoded = 0
+
+                SCORE = 0  # スコア
+                message.info(SCORE, 0)  # スコアの表示
+                pre_time = time.time()  # 現在の時刻を取得
+                limit_num = 0  # 開始直後に動けるボールの数（下の方で増える処理がある）
+
+                set_up = True  # 準備完了
+                pygame.display.update()
+                pygame.time.delay(500)
+
+            
+
+            # メインループ
+            if not is_gameover or not is_clear:
+                # clock.tick(fps)
+                # ------------------------------------------------------ bar ------------------------------------------------------------
+                if control_name[control_mode] == "Key":
+                    move_right, move_left, BAR_x, pre_x = bar.input_key(move_right, move_left, BAR_x)
+                elif control_name[control_mode] == "Resist":
+                    pre_x = BAR_x  # 動かす前のバーのx座標を保存
+                    data = ser.readline().decode().strip()  # データを文字列として受信し、空白文字を除去する
+                    try:
+                        value = int(data)
+                        BAR_x = game_x + Bar_Width/2 + (game_screen_W - line_width - Bar_Width) * round((Resist_MAX - value) / (Resist_MAX - Resist_MIN), 2)
                         message.info(SCORE, val_decoded)
-                        ball.vel_x *= -1
-                    elif block.check_collision_y(ball.x, ball.y):
-                        blocks.remove(block)
-                        sound.breaks()
-                        SCORE += 10
-                        message.info(SCORE, val_decoded)
-                        ball.vel_y *= -1
+                    except ValueError:
+                        continue
+
+                bar.move(pre_x, BAR_x)
+
+                # ------------------------------------------------------ ball ------------------------------------------------------------
+                for index, ball in enumerate(balls):  # 動かすボールとそのインデックスを取得
+                    ball.move()
+                    ball.check_collision(BAR_x, Ball_Speed)
+                    # ブロックとの接触判定
+                    for block in blocks:
+                        if block.check_collision_x(ball.x, ball.y):
+                            blocks.remove(block)
+                            sound.breaks()
+                            SCORE += 10
+                            message.info(SCORE, val_decoded)
+                            ball.vel_x *= -1
+                        elif block.check_collision_y(ball.x, ball.y):
+                            blocks.remove(block)
+                            sound.breaks()
+                            SCORE += 10
+                            message.info(SCORE, val_decoded)
+                            ball.vel_y *= -1
 
 
-                # 残りのブロック数が少なくなるほどボールスピードが速くなる
-                ball.accel = round(2.0 - len(blocks) / (Block_num_B * Block_num_V), 3)
+                    # 残りのブロック数が少なくなるほどボールスピードが速くなる
+                    ball.accel = round(2.0 - len(blocks) / (Block_num_B * Block_num_V), 3)
 
 
-                # ボールが画面底部を抜けたとき
-                if ball.y - ball.r >= game_screen_H:
-                    balls.remove(ball)
-                    pygame.draw.circle(screen, "white", (ball.x, ball.y), ball.r)
-                    if len(balls) == 0:  # ボールが全てなくなったとき
-                        is_gameover = True
-                        game_started = False
+                    # ボールが画面底部を抜けたとき
+                    if ball.y - ball.r >= game_screen_H:
+                        balls.remove(ball)
+                        pygame.draw.circle(screen, "white", (ball.x, ball.y), ball.r)
+                        if len(balls) == 0:  # ボールが全てなくなったとき
+                            is_gameover = True
+                            game_started = False
 
 
-                # ゲーム開始時のボール待機の処理
-                if limit_num < Ball_num - 1:
-                    now_time = time.time()  # 現在の時刻を取得
-                    index += 1  # 現在動いているボールの番号
+                    # ゲーム開始時のボール待機の処理
+                    if limit_num < Ball_num - 1:
+                        now_time = time.time()  # 現在の時刻を取得
+                        index += 1  # 現在動いているボールの番号
 
-                    # ここでブレイクすることで、後続のボールが動く前に次のループに入る
-                    if index > limit_num:
-                        if now_time - pre_time < Ball_delay:  # 経過時間が待機時間より短いとき
-                            break
-                        else:  # 充分待機したとき
-                            pre_time = now_time
-                            limit_num += 1  # 何番のボールまで動けるかを数える
-                            break
+                        # ここでブレイクすることで、後続のボールが動く前に次のループに入る
+                        if index > limit_num:
+                            if now_time - pre_time < Ball_delay:  # 経過時間が待機時間より短いとき
+                                break
+                            else:  # 充分待機したとき
+                                pre_time = now_time
+                                limit_num += 1  # 何番のボールまで動けるかを数える
+                                break
 
-            # ------------------------------------------------------ clear ------------------------------------------------------------
-            # 残りのブロック数が0になったとき（クリアしたとき）
-            if len(blocks) == 0:
-                SCORE += len(balls) * Ball_score  # 残りのボールの数得点が加算
-                is_clear = True
-                game_started = False
+                # ------------------------------------------------------ clear ------------------------------------------------------------
+                # 残りのブロック数が0になったとき（クリアしたとき）
+                if len(blocks) == 0:
+                    SCORE += len(balls) * Ball_score  # 残りのボールの数得点が加算
+                    is_clear = True
+                    game_started = False
+                
+                
+                # 画面を更新する
+                pygame.draw.rect(screen, "black", Rect(2*blank, blank, game_screen_W, game_screen_H),4)  # なぜか欠けるからゲーム画面の枠線を書き直し
+                pygame.display.update()
+                pygame.time.delay(1)
             
-            
-            # 画面を更新する
-            pygame.draw.rect(screen, "black", Rect(2*blank, blank, game_screen_W, game_screen_H),4)  # なぜか欠けるからゲーム画面の枠線を書き直し
-            pygame.display.update()
-            pygame.time.delay(1)
-        
 
-# Pygameの終了
-pygame.quit()
-sys.exit()
+    # Pygameの終了
+    pygame.quit()
+    sys.exit()
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-# # フラグの初期設定
-# running = True          # プログラムを進行させるかを示す
-# game_started = False    # ゲームが開始されたかどうかを示す
-# is_gameover = False     # ゲームオーバーになったかを示す
-# is_clear = False        # クリアしたかを示す
-# is_title = True         # タイトル画面かを示す
-
-# select_num = 0  # 何番目の選択肢を選んでいるか
-# option_window = 0  # 何番目の選択肢階層にいるか
-# message = Message()
-
-
-# while running:
-
-#     # ゲームが開始されていない場合
-#     while not game_started:
-
-#         # メッセージの表示
-#         if not is_gameover and not is_clear:  # タイトル画面
-#             screen.fill("white")
-#             message.title()
-#         else:
-#             if is_gameover and not is_clear:  # ゲームオーバーしたとき
-#                 message.gameover()
-#             else:  # クリアしたとき
-#                 message.clear()
-
-#             for event in pygame.event.get():
-#                 if event.type == pygame.QUIT:
-#                     pygame.quit()
-#                     sys.exit()
-
-#                 if event.type == pygame.KEYDOWN:
-#                     if event.key == K_ESCAPE:  # escキーでゲームを終了
-#                         pygame.quit()
-#                         sys.exit()
-
-#                     if event.key == K_RETURN:  # enterが押されたとき
-#                         screen.fill("white")
-#                         message.title()
-#                         sound.decide()
-#                         is_title = True
-#                         select_num = 0
-
-#                     elif event.key == K_SPACE:
-#                         sound.decide()
-#                         game_started = True
-
-#         pygame.display.update()
-
-#         # ------------------------------------------------------------------------------------------------------------------
-#         # タイトル画面での処理
-#         while is_title:
-#             # ゲーム開始の処理
-#             for event in pygame.event.get():
-#                 if event.type == pygame.QUIT:
-#                     pygame.quit()
-#                     sys.exit()
-
-#                 if event.type == pygame.KEYDOWN:
-#                     if event.key == K_ESCAPE:  # escキーでゲームを終了
-#                         pygame.quit()
-#                         sys.exit()
-
-#                     # タイトル画面でオプションを選んでいるとき
-#                     if option_window == 0:
-#                         # 矢印キーの上下が押されたとき、対応する選択肢の文字を大きくする
-#                         if event.key == K_DOWN:
-#                             select_num += 1
-#                             sound.select()
-#                         elif event.key == K_UP:
-#                             select_num -= 1
-#                             sound.select()
-#                         select_num = select_num % len(message.words)  # 値が大きすぎたりマイナスになるのを回避
-#                         message.select()
-#                         pygame.display.update()
-
-#                         # 選択肢が選ばれたとき
-#                         if event.key == K_RETURN:  # enterが押されたとき
-#                             if message.words[select_num] == "OPTION":
-#                                 select_num = 0
-#                                 option_window = 1
-#                                 sound.decide()
-#                                 message.option(Ball_num, Ball_Speed)
-#                                 pygame.display.update()
-#                             elif message.words[select_num] == "QUIT":
-#                                 sound.decide()
-#                                 pygame.quit()
-#                                 sys.exit()
-                    
-#                     # オプションの中身を表示している場合
-#                     if option_window == 1:
-#                         # 矢印キーを押したとき、対応する文字を大きくするための変数管理
-#                         if event.key == K_DOWN:
-#                             select_num += 1
-#                             sound.select()
-#                         elif event.key == K_UP:
-#                             select_num -= 1
-#                             sound.select()
-#                         select_num = select_num % len(message.options) 
-
-#                         # 該当するオプションの数値を増減させる
-#                         if event.key == K_RIGHT:
-#                             if message.options[select_num] == "NUM BALL":
-#                                 Ball_num += 1
-#                                 sound.select()
-#                             elif message.options[select_num] == "BALL SPEED":
-#                                 Ball_Speed += .1
-#                                 sound.select()
-#                         elif event.key == K_LEFT:
-#                             if message.options[select_num] == "NUM BALL":
-#                                 Ball_num -= 1
-#                                 sound.select()
-#                             elif message.options[select_num] == "BALL SPEED":
-#                                 Ball_Speed -= .1
-#                                 sound.select()
-#                         Ball_num = Ball_num % 11  # 0~10の範囲内のみ
-#                         Ball_Speed = Ball_Speed % 5.1  # 0.0~5.0の範囲内のみ
-#                         Ball_Speed = round(Ball_Speed, 2)  # 少数第2位を四捨五入
-
-#                         message.option(Ball_num, Ball_Speed)
-#                         pygame.display.update()
-
-#                         # 選択肢が選ばれたとき
-#                         if event.key == K_RETURN:  # enterが押されたとき
-#                             if message.options[select_num] == "TITLE":
-#                                 select_num = 0
-#                                 option_window = 0
-#                                 sound.decide()
-#                                 message.select()
-#                                 pygame.display.update()
-
-#                     # スペースキーが押されたらゲームを開始する
-#                     if event.key == pygame.K_SPACE:
-#                         sound.decide()
-#                         game_started = True
-#                         is_title = False
-
-
-#     # ゲームが開始されている場合
-#     set_up = False
-#     is_gameover = False
-#     is_clear = False
-#     while game_started:
-
-#         # ------------------------------------------------------------------------------------------------------------------
-#         # ゲーム開始時の初回設定
-#         if not set_up:
-#             screen.fill("white")
-#             # ゲーム画面、インフォメーション画面の作成
-#             pygame.draw.rect(screen, "black", Rect(game_x, game_y, game_screen_W, game_screen_H),4)
-#             pygame.draw.rect(screen, "black", Rect(info_x, info_y, info_screen_W, info_screen_H), line_width)
-
-#             # 各ブロック、各ボールの生成
-#             blocks = [Block(screen, ix*Block_Width + game_x + line_width, iy*Block_Height + game_y, random.choice(COLORS)) for ix in range(game_screen_W//Block_Width) for iy in range(Block_pos_lim//Block_Height)]
-#             balls = [Ball(screen,x0,y0) for i in range(Ball_num)]
-#             # バーの位置の初期化
-#             BAR_x = game_screen_W/2  # バーの中心x座標
-#             bar = Bar(screen, BAR_x)
-#             move_left = False
-#             move_right = False
-#             val_decoded = 0
-
-#             SCORE = 0  # スコア
-#             message.info(SCORE, 0)  # スコアの表示
-#             pre_time = time.time()  # 現在の時刻を取得
-#             limit_num = 0  # 開始直後に動けるボールの数（下の方で増える処理がある）
-
-#             set_up = True  # 準備完了
-#             pygame.display.update()
-#             pygame.time.delay(500)
-
-        
-
-#         # メインループ
-#         if not is_gameover or not is_clear:
-#             # clock.tick(fps)
-#             # ------------------------------------------------------ bar ------------------------------------------------------------
-#             if control_name[control_mode] == "Key":
-#                 move_right, move_left, BAR_x, pre_x = bar.input_key(move_right, move_left, BAR_x)
-#             elif control_name[control_mode] == "Resist":
-#                 pre_x = BAR_x  # 動かす前のバーのx座標を保存
-#                 data = ser.readline().decode().strip()  # データを文字列として受信し、空白文字を除去する
-#                 try:
-#                     value = int(data)
-#                     BAR_x = game_x + Bar_Width/2 + (game_screen_W - line_width - Bar_Width) * round((Resist_MAX - value) / (Resist_MAX - Resist_MIN), 2)
-#                     message.info(SCORE, val_decoded)
-#                 except ValueError:
-#                     continue
-
-#             bar.move(pre_x, BAR_x)
-
-#             # ------------------------------------------------------ ball ------------------------------------------------------------
-#             for index, ball in enumerate(balls):  # 動かすボールとそのインデックスを取得
-#                 ball.move()
-#                 ball.check_collision()
-#                 # ブロックとの接触判定
-#                 for block in blocks:
-#                     if block.check_collision_x(ball.x, ball.y):
-#                         blocks.remove(block)
-#                         sound.breaks()
-#                         SCORE += 10
-#                         message.info(SCORE, val_decoded)
-#                         ball.vel_x *= -1
-#                     elif block.check_collision_y(ball.x, ball.y):
-#                         blocks.remove(block)
-#                         sound.breaks()
-#                         SCORE += 10
-#                         message.info(SCORE, val_decoded)
-#                         ball.vel_y *= -1
-
-
-#                 # 残りのブロック数が少なくなるほどボールスピードが速くなる
-#                 ball.accel = round(2.0 - len(blocks) / (Block_num_B * Block_num_V), 3)
-
-
-#                 # ボールが画面底部を抜けたとき
-#                 if ball.y - ball.r >= game_screen_H:
-#                     balls.remove(ball)
-#                     pygame.draw.circle(screen, "white", (ball.x, ball.y), ball.r)
-#                     if len(balls) == 0:  # ボールが全てなくなったとき
-#                         is_gameover = True
-#                         game_started = False
-
-
-#                 # ゲーム開始時のボール待機の処理
-#                 if limit_num < Ball_num - 1:
-#                     now_time = time.time()  # 現在の時刻を取得
-#                     index += 1  # 現在動いているボールの番号
-
-#                     # ここでブレイクすることで、後続のボールが動く前に次のループに入る
-#                     if index > limit_num:
-#                         if now_time - pre_time < Ball_delay:  # 経過時間が待機時間より短いとき
-#                             break
-#                         else:  # 充分待機したとき
-#                             pre_time = now_time
-#                             limit_num += 1  # 何番のボールまで動けるかを数える
-#                             break
-
-#             # ------------------------------------------------------ clear ------------------------------------------------------------
-#             # 残りのブロック数が0になったとき（クリアしたとき）
-#             if len(blocks) == 0:
-#                 SCORE += len(balls) * Ball_score  # 残りのボールの数得点が加算
-#                 is_clear = True
-#                 game_started = False
-            
-            
-#             # 画面を更新する
-#             pygame.draw.rect(screen, "black", Rect(2*blank, blank, game_screen_W, game_screen_H),4)  # なぜか欠けるからゲーム画面の枠線を書き直し
-#             pygame.display.update()
-#             pygame.time.delay(1)
-        
-
-# # Pygameの終了
-# pygame.quit()
-# sys.exit()
+if __name__ == "__main__":
+    BlockBreaker(running=True)
